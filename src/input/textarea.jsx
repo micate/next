@@ -94,26 +94,51 @@ export default class TextArea extends Base {
         this.state = {
             value: typeof value === 'undefined' || value === null ? '' : value,
         };
+
+        this._isAutoHeightInited = false;
     }
 
     componentDidMount() {
-        const autoHeight = this.props.autoHeight;
-        if (autoHeight) {
-            if (typeof autoHeight === 'object') {
-                /* eslint-disable react/no-did-mount-set-state */
-                this.setState(this._getMinMaxHeight(autoHeight, this.state.value));
-            } else {
-                this.setState({
-                    height: this._getHeight(this.state.value),
-                    overflowY: 'hidden',
-                });
-            }
-        }
+        const { value } = this.state;
+        this._initAutoHeightOnce(value);
     }
 
     componentDidUpdate(prevProps) {
         if (this.props.autoHeight && this.props.value !== prevProps.value) {
-            this._resizeTextArea(this.props.value);
+            const { value } = this.props;
+            if (this._isAutoHeightInited) {
+                this._resizeTextArea(value);
+            } else {
+                this._initAutoHeightOnce(value);
+            }
+        }
+    }
+
+    _initAutoHeightOnce(value) {
+        const { autoHeight } = this.props;
+        if (!autoHeight) {
+            return;
+        }
+
+        if (this._isAutoHeightInited) {
+            return;
+        }
+
+        const node = ReactDOM.findDOMNode(this.helpRef);
+        if (!node || !node.clientHeight) {
+            return;
+        }
+
+        this._isAutoHeightInited = true;
+
+        if (typeof autoHeight === 'object') {
+            /* eslint-disable react/no-did-mount-set-state */
+            this.setState(this._getMinMaxHeight(autoHeight, value));
+        } else {
+            this.setState({
+                height: this._getHeight(value),
+                overflowY: 'hidden',
+            });
         }
     }
 
